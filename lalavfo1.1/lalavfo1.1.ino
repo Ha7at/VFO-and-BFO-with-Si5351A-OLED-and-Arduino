@@ -3,9 +3,7 @@ Si5351 VFO
 
 By LA3PNA  27 March 2015
 Modified by NT7S  25 April 2015
-Modified by HA7AT  25 April 2015
-
-
+Modified by HA7AT  19 05 2022
 Modified to be Si5351 Arduino v2 compliant by NT7S  21 Nov 2016
 
 This version uses the new version of the Si5351 library from NT7S.
@@ -51,14 +49,18 @@ VFO signal output on CLK0, BFO signal on CLK2
 Si5351 si5351;
 
 // interrupt service routine vars
+int n=0 ;
+
 boolean A_set = false;
 boolean B_set = false;
-volatile unsigned long frequency = 10000000UL; // This will be the frequency it always starts on.
+volatile unsigned long frequency = 7000000UL; // This will be the frequency it always starts on.
+ long long pllfrequency= (frequency*2*n);
+
 volatile int tx;
 
 unsigned long iffreq =0 ; // set the IF frequency in Hz.
 const unsigned long freqstep[] = {100,500,1000,5000,10000,50000, }; // set this to your wanted tuning rate in Hz.
-int corr = 16500; // this is the correction factor for the Si5351, use calibration sketch to find value.
+int corr = 0; // this is the correction factor for the Si5351, use calibration sketch to find value.
 unsigned int lastReportedPos = 1;   // change management
 static boolean rotating = false;    // debounce management
 int inData;
@@ -171,12 +173,13 @@ void sprintf_seperated(char *str, unsigned long num)
     u8g.setFont(u8g_font_unifont);
     //u8g.setFont(u8g_font_helvR12);
     sprintf_seperated(temp_str, frequency);
-    u8g.drawStr(0, 16, temp_str);
+    u8g.drawStr(0, 20, temp_str);
     
     u8g.setFont(u8g_font_unifont);
     sprintf(temp_str, "Step: %5u", freqstep[freqsteps]);
-    u8g.drawStr(0, 32, temp_str);
-    u8g.drawStr(35, 56, "HA7AT");
+    u8g.drawStr(0, 36, temp_str);
+  //  sprintf(temp_str, "Step: %5u", [pllfrequency]);
+    u8g.drawStr(20, 56, "HA7AT"); 
   }
 #endif
 
@@ -260,11 +263,14 @@ void setup()
   
   si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, corr);
   si5351.set_freq((frequency + iffreq) * 100ULL, SI5351_CLK0);
+ 
   si5351.set_freq(iffreq * 100ULL, SI5351_CLK2);
 }
 
 void loop()
-{
+{ 
+   if ( pllfrequency < 5000000000UL ) {(n=n+1 ); 
+   };
   if(digitalRead(txpin))
   {
     tx = 0;
